@@ -1,0 +1,11 @@
+HBASE_HOST = '127.0.0.1'
+HBASE_PORT = 9090
+HBASE_TABLE_PREFIX = 'spider'
+HBASE_CONN_POOL_SIZE = 3
+HBASE_BATCH_SIZE = 100
+
+HBASE_SCHEMA = [
+    ('test', {'cf': {}})
+]
+
+
