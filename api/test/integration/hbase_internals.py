@@ -67,17 +67,18 @@ class TestHbaseInternals(unittest.TestCase):
         self.assertEquals(success, True)
         self.assertEquals(errors, [])
 
-        row6 = self.i.find_one(self.test_table, 'row-key-6')
-        row7 = self.i.find_one(self.test_table, 'row-key-7')
-        row8 = self.i.find_one(self.test_table, 'row-key-8')
-        row9 = self.i.find_one(self.test_table, 'row-key-9')
-        row10 = self.i.find_one(self.test_table, 'row-key-10')
+        self.assertEquals(self.map_observed(self.i.find_one(self.test_table, 'row-key-6')), addtl_expected[0][1])
+        self.assertEquals(self.map_observed(self.i.find_one(self.test_table, 'row-key-7')), addtl_expected[1][1])
+        self.assertEquals(self.map_observed(self.i.find_one(self.test_table, 'row-key-8')), addtl_expected[2][1])
+        self.assertEquals(self.map_observed(self.i.find_one(self.test_table, 'row-key-9')), addtl_expected[3][1])
+        self.assertEquals(self.map_observed(self.i.find_one(self.test_table, 'row-key-10')), addtl_expected[4][1])
 
-        sys.stderr.write(str(row6))
-        sys.stderr.write(str(row7))
-        sys.stderr.write(str(row8))
-        sys.stderr.write(str(row9))
-        sys.stderr.write(str(row10))
+    def test_inc_and_dec(self):
+        self.assertEquals(self.i.inc(self.test_table, 'row-key-11', 'cf', how_much=10), 10)
+        self.assertEquals(self.i.inc(self.test_table, 'row-key-11', 'cf', how_much=5), 15)
+        self.assertEquals(self.i.inc(self.test_table, 'row-key-11', 'cf', how_much=1), 16)
+        self.assertEquals(self.i.dec(self.test_table, 'row-key-11', 'cf', how_much=16), 0)
+        self.assertEquals(self.i.dec(self.test_table, 'row-key-11', 'cf', how_much=1), -1)
 
 if __name__ == '__main__':
     unittest.main()

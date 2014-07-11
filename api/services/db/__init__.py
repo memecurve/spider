@@ -76,17 +76,19 @@ class Internals(object):
             ]
 
         :type specs: list( tuple( str, dict ) )
-        :param int timestamp: The timestamp to assign as the timestamp value for the batch. Defaults to the current time.
+        :param int timestamp: The timestamp to assign as the timestamp value for the batch. Defaults to the current time. Not working at the moment.
         
         :returns: A tuple of True, [] if every spec succeeds. Otherwise False, [str] (with an error message)
         """
         if timestamp is None:
             timestamp = int(time.mktime(datetime.datetime.utcnow().timetuple()))
-        with self.conn_pool().connection() as conn:
-            with conn.table(table).batch(timestamp=timestamp, batch_size=HBASE_BATCH_SIZE) as b:
-                for row_key, doc in specs:
-                    sys.stderr.write("<{0}: {1}>\n".format(row_key, doc))
-                    b.put(row_key, doc)
+        try:
+            with self.conn_pool().connection() as conn:
+                with conn.table(table).batch(batch_size=HBASE_BATCH_SIZE) as b: # TODO: Figure out why timestamp doesn't work
+                    for row_key, doc in specs:
+                        b.put(row_key, doc)
+        except ValueError, e:
+            return False, [str(e)]
         return True, []
 
     def inc(self, table, row_key, column_family, how_much=0):
