@@ -20,7 +20,6 @@ class DocumentTest(unittest.TestCase):
                          hrefs=[('http://nytimes.com', 10), ('http://usatoday.com', 50)],
                          type='rss', updated_at=updated_at)
 
-
             a_, errors = document.create(a, updated_at)
             self.assertEquals(errors, [])
             b_, errors = document.create(b, updated_at)

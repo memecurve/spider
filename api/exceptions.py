@@ -6,3 +6,6 @@ class MissingParameters(SpiderException):
 
 class ExtraParameters(SpiderException):
     pass
+
+class StopConsuming(SpiderException):
+    pass

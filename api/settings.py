@@ -11,4 +11,8 @@ HBASE_SCHEMA = [
                   'href': {'max_versions': 1} })# [{href:www.buzzfeed.com: 1}] List of dicts})
 ]
 
+RABBITMQ_HOST = 'localhost'
+RABBITMQ_PORT = 5672
+RABBITMQ_URL_QUEUE = 'download-tasks'
+
 
