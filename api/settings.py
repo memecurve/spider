@@ -5,7 +5,10 @@ HBASE_CONN_POOL_SIZE = 3
 HBASE_BATCH_SIZE = 100
 
 HBASE_SCHEMA = [
-    ('test', {'cf': {}})
+    ('test', {'cf': {}}),
+    ('document', {'self': {'max_versions': 1}, # self:url, self:type, self:updated_at
+                  'data': {'max_versions': 1},
+                  'href': {'max_versions': 1} })# [{href:www.buzzfeed.com: 1}] List of dicts})
 ]
 
 

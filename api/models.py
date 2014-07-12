@@ -28,5 +28,14 @@ class Model(object):
 
 
 class Document(Model):
-    REQUIRED_FIELDS = {'url', 'markup'}
-    OPTIONAL_FIELDS = {'hrefs'}
+    """
+    Document represents a complete html document.
+
+    :param str url: The unique url for the document
+    :param str markup: The complete sgml or xml for the document
+    :param hrefs: A list of domains and the frequency with which they appear on the page.
+    :type hrefs: list( tuple( str, int ) )
+    """
+    REQUIRED_FIELDS = {'url', 'type', 'updated_at'}
+    OPTIONAL_FIELDS = {'hrefs', 'markup'}
+

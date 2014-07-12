@@ -1,6 +1,6 @@
 import datetime
-import sys
 import time
+import pytz
 
 import happybase
 
@@ -12,10 +12,31 @@ from api.settings import (
     HBASE_BATCH_SIZE
 )
 
+LOCAL_TZ = pytz.utc
+
+def _safe_call(f):
+    def _f(*args, **kwargs):
+        try:
+            return f(*args, **kwargs), []
+        except (RuntimeError, ValueError, happybase.NoConnectionsAvailable), e: # Happybase uses generic errors :(
+            return None, [str(e)]
+    return _f
+
 class Internals(object):
+
+    _instance = None
 
     def __init__(self):
         self.__conn_pool = None
+
+    def __new__(cls, *args, **kwargs):
+        """
+        Makes Internals a singleton
+        """
+        if not cls._instance:
+            cls._instance = super(Internals, cls).__new__(
+                                cls, *args, **kwargs)
+        return cls._instance
 
     def conn_pool(self):
         """
@@ -29,6 +50,7 @@ class Internals(object):
                 table_prefix_separator='_')
         return self.__conn_pool
 
+    @_safe_call
     def write(self, table, row_key, doc):
         """
         Write a document to a row key 
@@ -36,6 +58,7 @@ class Internals(object):
         with self.conn_pool().connection() as conn:
             return conn.table(table).put(row_key, doc)
 
+    @_safe_call
     def find_one(self, table, row_key):
         """
         Returns a single tuple of value, timestamp by a row key.
@@ -43,13 +66,19 @@ class Internals(object):
         with self.conn_pool().connection() as conn:
             return conn.table(table).row(row_key, include_timestamp=True)
 
-    def find(self, table, rowprefix):
+    @_safe_call
+    def find(self, table, row_prefix=None, row_start=None, row_stop=None, columns=None):
         """
         Returns a cursor of value, timestamp from a table by row prefix.
         """
+        params = {k: v for k, v in locals().items() if v is not None}
+        params['include_timestamp'] = True
+        del params['table']
+        del params['self']
         with self.conn_pool().connection() as conn:
-            return conn.table(table).scan(rowprefix, include_timestamp=True)
+            return conn.table(table).scan(**params)
 
+    @_safe_call
     def delete_one(self, table, row_key):
         """
         Delete a record from a table by row key. This creates a tombstone to be actually deleted upon rebalancing.
@@ -57,6 +86,7 @@ class Internals(object):
         with self.conn_pool().connection() as conn:
             return conn.table(table).delete(row_key)
 
+    @_safe_call
     def write_many(self, table, specs, timestamp=None):
         """
         Implements a batched write to the database. 
@@ -88,9 +118,10 @@ class Internals(object):
                     for row_key, doc in specs:
                         b.put(row_key, doc)
         except ValueError, e:
-            return False, [str(e)]
-        return True, []
+            return False
+        return True
 
+    @_safe_call
     def inc(self, table, row_key, column_family, how_much=0):
         """
         Increments a counter atomically. The counter is an 8-byte wide value. HBase treats them as big endian 64b signed ints. 
@@ -108,6 +139,7 @@ class Internals(object):
         with self.conn_pool().connection() as conn:
             return conn.table(table).counter_inc(row_key, column_family, how_much)
 
+    @_safe_call
     def dec(self, table, row_key, column_family, how_much=0):
         """
         Decrements a counter atomically. The counter is an 8-byte wide value. HBase treats them as big endian 64b signed ints. 
@@ -125,3 +157,24 @@ class Internals(object):
         with self.conn_pool().connection() as conn:
             return conn.table(table).counter_dec(row_key, column_family, value=how_much)
 
+
+    def get_timestamp(self):
+        return int(time.mktime(datetime.datetime.now().replace(tzinfo=LOCAL_TZ).timetuple()))
+
+    def delete_table(self, table):
+        """
+        Disables and deletes an entire table.
+
+        :param str table: The name of the table to delete.
+
+        """
+        with self.conn_pool().connection() as conn:
+            return conn.delete_table(table, disable=True)
+
+    def create_table(self, table, descriptors):
+        """
+        Creates a table.
+
+        """
+        with self.conn_pool().connection() as conn:
+            return conn.create_table(table, descriptors)

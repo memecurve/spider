@@ -1,7 +1,11 @@
 import unittest
 import json
 
-from api.models import Document
+from api.models import Model
+
+class Document(Model):
+    REQUIRED_FIELDS = {'url', 'markup'}
+    OPTIONAL_FIELDS = {'hrefs'}
 
 from api.exceptions import ExtraParameters
 from api.exceptions import MissingParameters

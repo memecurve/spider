@@ -1,3 +1,4 @@
+import sys
 import feedparser
 import requests
 
@@ -32,32 +33,37 @@ def get_type(markup):
         return 'sgml'
     return 'rss'
 
-def extract_links(url, markup):
+def links_from_sgml(markup):
     """
-    Given a string representation of a document (rss or sgml) returns a list of all the links on the page, with relative links re-written to include the domain.
+    Given a string representation of a document (sgml) returns a list of all the links on the page, relative and absolute. JavaScript links omitted.
 
-    :param str url: The url that points to the markup
-    :param str markup: The document at the url.
+    :param str markup: A valid sgml document.
 
     :returns: A list of links as strings.
     :rtype: list( str )
     """
-    # TODO: Finish this method
-    parent_link = urlparse(url)
-    base = "{0}://{1}".format(parent_link.scheme, parent_link.netloc)
     bs4_links = BeautifulSoup(markup).find_all('a')
     str_links = []
     for link in bs4_links:
-        href = link['href']
+        href = link.get('href', '')
         u = urlparse(href)
         if u.scheme.lower() == 'javascript':
             continue
-        if u.scheme and u.netloc:
-            str_link = href
-        if not u.scheme or not u.netloc:
-            str_link = "{0}{1}?{2}".format(base, u.path, u.query)
-        str_links.append(str_link)
+        if u.scheme and u.netloc: # Absolute href
+            str_links.append(href)
+        if not u.scheme and not u.netloc and u.path: # Relative href
+            str_links.append(href)
     return str_links
 
+def links_from_rss(markup):
+    """
+    Given a string representation of a document (rss) returns a list of all the links, relative and absolute. JavaScript links omitted.
 
+    :param str markup: A valid rss document.
+
+    :returns: A list of links as strings.
+    :rtype: list( str )
+    """
+    entries = feedparser.parse(markup).entries
+    return [e.link for e in entries if e.link]
 
