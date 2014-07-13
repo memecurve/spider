@@ -20,10 +20,10 @@ def create(document, created_at=None):
     """
     internals = Internals()
     updated_at = created_at or internals.get_timestamp()
-    hrefs = {'href:{0}'.format(ref): str(freq) for ref, freq in document.hrefs}
+    hrefs = {'href:{0}'.format(ref): unicode(freq) for ref, freq in document.hrefs}
     doc = { 'self:url': document.url,
             'self:type': document.type,
-            'self:updated_at': str(updated_at),
+            'self:updated_at': unicode(updated_at),
             'data:markup': document.markup }
     doc.update(hrefs)
 

@@ -21,7 +21,10 @@ def get_markup(url):
     :rtype: str
     :returns: A string representation of the markup
     """
-    return requests.get(url).content
+    try:
+        return requests.get(url).content
+    except requests.exceptions.ConnectionError:
+        return ''
 
 def get_type(markup):
     """
