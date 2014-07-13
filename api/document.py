@@ -1,4 +1,5 @@
 import datetime
+import logging
 import time
 
 from api.services.db import document as db_document
@@ -8,6 +9,8 @@ from api.models import Document
 
 from api import canonicalize
 from api import Gatherer
+
+logger = logging.getLogger(__name__)
 
 def find_or_create(url):
     """
@@ -32,10 +35,16 @@ def find_or_create(url):
         elif type == 'sgml':
             links = http.links_from_sgml(markup)
 
-        for link, freq in links:
-            _ = g.call(p.send({'url': url}))
-
         hrefs = http.hrefs_from_links(base, links)
+
+        for link, freq in hrefs:
+            logger.debug("Queuing {0}...".format(link))
+            success = p.send({'url': link})
+            if not success:
+                while not success:
+                    time.sleep(1)
+                    success = p.send({'url': link})
+
         d = Document(url=canonical,
                      markup=markup,
                      type=type,
