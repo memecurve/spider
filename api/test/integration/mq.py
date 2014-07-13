@@ -17,7 +17,7 @@ class TestMQ(unittest.TestCase):
 
     def test_queue_and_consume(self):
         mq.Consumer.TIMEOUT = 2
-
+        p = mq.Producer()
         urls = ['http://www.example.com/', 'http://www.google.com/', 'http://www.yahoo.com/', 'http://www.netflix.com/', 'http://www.hulu.com/']
 
         def write_document(msg):
@@ -32,7 +32,7 @@ class TestMQ(unittest.TestCase):
             return True
 
         for url in urls:
-            mq.queue_for_downloading(url)
+            p.send({'url': url})
 
         for url in urls:
             mq.pass_urls(write_document, daemonize=False)

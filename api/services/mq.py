@@ -13,20 +13,37 @@ from api.settings import RABBITMQ_URL_QUEUE
 logging.getLogger('pika').setLevel(logging.WARNING)
 logging.getLogger('pika.channel').setLevel(logging.WARNING)
 
-def queue_for_downloading(url):
-    """
-    Sends a url to the queue to be downloaded.
-    """
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST, port=RABBITMQ_PORT))
-    channel = connection.channel()
-    channel.confirm_delivery()
-    channel.basic_publish(exchange='',
-                          routing_key=RABBITMQ_URL_QUEUE,
-                          body=json.dumps({'url': url}),
-                          properties=pika.BasicProperties(
-                              delivery_mode=2
-                          ))
-    connection.close()
+class Producer(object):
+
+    TIMEOUT = False
+
+    def __init__(self, queue=None, callback=None):
+        self.__cfg = pika.ConnectionParameters(host=RABBITMQ_HOST, port=RABBITMQ_PORT)
+        self.__conn = pika.BlockingConnection(self.__cfg)
+        self.__channel = self.__conn.channel()
+        self.__queue = queue
+
+        self.__channel.confirm_delivery()
+
+        if Producer.TIMEOUT:
+            self.__conn.add_timeout(Producer.TIMEOUT, self.ontimeout)
+
+    def ontimeout(self):
+        pass
+
+    def send(self, message):
+        """
+        Sends a json serializeable python object
+
+        :param object message: The message to queue.
+        """
+        return self.__channel.basic_publish(exchange='',
+                                            routing_key=RABBITMQ_URL_QUEUE,
+                                            body=json.dumps(message),
+                                            properties=pika.BasicProperties(
+                                                delivery_mode=2
+                                            ))
+
 
 class Consumer(object):
 

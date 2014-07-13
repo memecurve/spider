@@ -39,4 +39,14 @@ class HttpTest(unittest.TestCase):
         expected = ["http://www.example.com/item1-info-page.html"]
         self.assertEquals(atom03_links, expected)
 
+    def test_hrefs_from_links(self):
+        base = 'http://buzzfeed.com/'
+        links = ['/username/post-slug', 'http://www.google.com/',
+                 'http://www.gmail.com?a=1&b=2',
+                 'http://www.buzzfeed.com/username/post-slug?b=2&a=2&utm_term=foobar#bizbaz']
 
+        self.assertEquals(http.hrefs_from_links(base, links),
+                          [('http://buzzfeed.com/username/post-slug', 1),
+                           ('http://www.gmail.com/?a=1&b=2', 1),
+                           ('http://www.google.com/', 1),
+                           ('http://www.buzzfeed.com/username/post-slug?a=2&b=2', 1)])
