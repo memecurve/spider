@@ -67,7 +67,7 @@ class Internals(object):
             return conn.table(table).row(row_key, include_timestamp=True)
 
     @_safe_call
-    def find(self, table, row_prefix=None, row_start=None, row_stop=None, columns=None):
+    def find(self, table, row_prefix=None, row_start=None, row_stop=None, columns=None, limit=None, filter=None):
         """
         Returns a cursor of value, timestamp from a table by row prefix.
         """

@@ -14,8 +14,11 @@ def integration(module=None):
 
 
 @task
-def unit():
-    call('nosetests --all-modules api/test/unit', shell=True)
+def unit(module=None):
+    if module:
+        call('nosetests --all-modules api/test/unit/{0}.py'.format(module), shell=True)
+    else:
+        call('nosetests --all-modules api/test/unit/', shell=True)
 
 @task
 def all():
