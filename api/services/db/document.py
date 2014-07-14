@@ -20,14 +20,14 @@ def create(document, created_at=None):
     """
     internals = Internals()
     updated_at = created_at or internals.get_timestamp()
-    hrefs = {'href:{0}'.format(ref): unicode(freq) for ref, freq in document.hrefs}
-    doc = { 'self:url': document.url,
-            'self:type': document.type,
-            'self:updated_at': unicode(updated_at),
-            'data:markup': document.markup }
+    hrefs = {u'href:{0}'.format(ref): unicode(freq) for ref, freq in document.hrefs}
+    doc = { u'self:url': document.url,
+            u'self:type': document.type,
+            u'self:updated_at': unicode(updated_at),
+            u'data:markup': document.markup }
     doc.update(hrefs)
 
-    row_key ="{0}{1}{2}".format(document.type,
+    row_key = u"{0}{1}{2}".format(document.type,
                                 updated_at,
                                 document.url)
 
@@ -63,8 +63,8 @@ def _get_row_range(type=None, updated_at__lte=None, updated_at__gte=None, url=No
     else:
         url = canonicalize(url)
 
-    start_row = "{0}{1}{2}".format(type, updated_at__gte, url)
-    end_row = "{0}{1}{2}".format(type, updated_at__lte, url)
+    start_row = u"{0}{1}{2}".format(type, updated_at__gte, url)
+    end_row = u"{0}{1}{2}".format(type, updated_at__lte, url)
 
     return start_row, end_row
 
@@ -92,7 +92,7 @@ def find_by_url(url=None, updated_at__lte=None, updated_at__gte=None, include_li
 
     docs = [d for d in g.call(internals.find(table=TABLE_NAME,
                                              row_start=start_row, row_stop=end_row,
-                                             columns=columns, filter="SingleColumnValueFilter ('self','url',=,'substring:{0}')".format(url),
+                                             columns=columns, filter=u"SingleColumnValueFilter ('self','url',=,'substring:{0}')".format(url),
                                              limit=1))]
 
     if not docs:
@@ -100,7 +100,7 @@ def find_by_url(url=None, updated_at__lte=None, updated_at__gte=None, include_li
                                             updated_at__lte=updated_at__lte, updated_at__gte=updated_at__gte)
         docs = g.call(internals.find(table=TABLE_NAME,
                                      row_start=start_row, row_stop=end_row,
-                                     columns=columns, filter="SingleColumnValueFilter ('self','url',=,'substring:{0}')".format(url),
+                                     columns=columns, filter=u"SingleColumnValueFilter ('self','url',=,'substring:{0}')".format(url),
                                      limit=1))
 
     docs = [g.call(hbase_to_model(d)) for d in docs]
@@ -167,7 +167,7 @@ def hbase_to_model(d):
                 hrefs.append((":".join(split_key[1:]), int(v[0])))
         params['hrefs'] = hrefs
     except (IndexError, KeyError), e:
-        return None, ["Improperly formatted database result."]
+        return None, [u"Improperly formatted database result."]
     return Document(**params), []
 
 

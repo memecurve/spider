@@ -1,4 +1,5 @@
 import sys
+import logging
 from urlparse import urlparse
 from collections import defaultdict
 
@@ -7,6 +8,11 @@ import requests
 from bs4 import BeautifulSoup
 
 from api import canonicalize
+from api.settings import LOG_LEVEL
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(LOG_LEVEL)
 
 ROOT_FEEDS = [
     "http://www.etalkinghead.com/directory", # Contains a lot of blogspot blogs
@@ -23,8 +29,10 @@ def get_markup(url):
     """
     try:
         return requests.get(url).content
-    except requests.exceptions.ConnectionError:
-        return ''
+    except requests.exceptions.ConnectionError, e:
+        return u''
+    except requests.exceptions.InvalidURL, e:
+        return u''
 
 def get_type(markup):
     """
@@ -36,8 +44,8 @@ def get_type(markup):
     :returns: One of 'rss' or 'sgml'
     """
     if not feedparser.parse(markup).version:
-        return 'sgml'
-    return 'rss'
+        return u'sgml'
+    return u'rss'
 
 def links_from_sgml(markup):
     """
@@ -88,8 +96,12 @@ def hrefs_from_links(base, links):
         base = base[0:-1]
     for link in links:
         if not urlparse(link).scheme:
-            link = "{0}{1}".format(base, link)
-        canonical = canonicalize(link)
+            link = u"{0}{1}".format(base, link)
+        try:
+            canonical = canonicalize(link)
+        except UnicodeDecodeError, e:
+            logger.error(u"Failed to decode {0}".format(link))
+            continue
         hrefs[canonical] += 1
     return hrefs.items()
 
@@ -103,4 +115,4 @@ def base_from_url(url):
     :returns: The url base.
     """
     u = urlparse(url)
-    return "{0}://{1}".format(u.scheme, u.netloc)
+    return u"{0}://{1}".format(u.scheme, u.netloc)

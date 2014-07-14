@@ -8,7 +8,7 @@ def canonicalize(url):
 
     :param str url: The url to canonicalize.
     """
-    p = urlparse.urlparse(url)
+    p = urlparse.urlparse(url.encode('utf8'))
     if not p.scheme:
         raise ValueError("Url must be absolute.")
     qs = urlparse.parse_qsl(p.query)
@@ -20,8 +20,8 @@ def canonicalize(url):
             canonical_qs.append((k, v))
     canonical_qs.sort(key=operator.itemgetter(0))
     if canonical_qs:
-        return "{0}://{1}{2}?{3}".format(p.scheme, p.netloc, p.path or '/', urllib.urlencode(canonical_qs))
-    return "{0}://{1}{2}".format(p.scheme, p.netloc, p.path or '/')
+        return u"{0}://{1}{2}?{3}".format(p.scheme, p.netloc, p.path or '/', urllib.urlencode(canonical_qs))
+    return u"{0}://{1}{2}".format(p.scheme, p.netloc, p.path or '/')
 
 class Gatherer(object):
 

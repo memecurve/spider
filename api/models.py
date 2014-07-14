@@ -11,10 +11,10 @@ class Model(object):
         extra_fields = user_input.difference(self.REQUIRED_FIELDS.union(self.OPTIONAL_FIELDS))
 
         if extra_fields:
-            raise ExtraParameters("Unrecognized parameters passed to <{0}>: {1}".format(self.__class__.__name__,
+            raise ExtraParameters(u"Unrecognized parameters passed to <{0}>: {1}".format(self.__class__.__name__,
                                                                                         ", ".join(extra_fields)))
         if missing_fields:
-            raise MissingParameters("Missing a required field(s) in <{0}>: {1}".format(self.__class__.__name__,
+            raise MissingParameters(u"Missing a required field(s) in <{0}>: {1}".format(self.__class__.__name__,
                                                                                        ", ".join(missing_fields)))
 
         for k, v in kwargs.items():

@@ -1,3 +1,5 @@
+import logging
+
 HBASE_HOST = '127.0.0.1'
 HBASE_PORT = 9090
 HBASE_TABLE_PREFIX = 'spider'
@@ -15,4 +17,4 @@ RABBITMQ_HOST = 'localhost'
 RABBITMQ_PORT = 5672
 RABBITMQ_URL_QUEUE = 'download-tasks'
 
-
+LOG_LEVEL = logging.DEBUG
