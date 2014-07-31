@@ -6,6 +6,7 @@ from api.services.db import HbaseInternals
 from api.models import Document
 
 from api.settings import LOG_LEVEL
+from api.settings import CYCLE_RESOLUTION
 
 TABLE_NAME = 'document'
 
@@ -26,6 +27,7 @@ def create(document, created_at=None):
     logger.debug("Create called.")
     internals = HbaseInternals()
     updated_at = created_at or internals.get_timestamp()
+    sys.stderr.write(u"{0}\n".format(document.url))
     hrefs = {u'href:{0}'.format(ref): unicode(freq) for ref, freq in document.hrefs}
     doc = { u'self:url': document.url,
             u'self:type': document.type,
@@ -72,7 +74,7 @@ def _get_row_range(type=None, updated_at__lte=None, updated_at__gte=None, url=No
         updated_at__lte = internals.get_timestamp()
     if updated_at__gte is None:
         logger.debug("Getting gte timestamp")
-        updated_at__gte = updated_at__lte - 604800
+        updated_at__gte = updated_at__lte - CYCLE_RESOLUTION
     if url is None:
         url = ''
     else:

@@ -20,13 +20,13 @@ RABBITMQ_URL_QUEUE = 'download-tasks'
 THRIFT_HOST = 'localhost'
 THRIFT_PORT = 9090
 
-LOG_LEVEL = logging.WARNING
+LOG_LEVEL = logging.DEBUG
 
 
 """
 Spider settings.
 
 """
-DISCOVER_NEW = True # Should we queue new links as they're discovered?
+DISCOVER_NEW = False # Should we queue new links as they're discovered?
 MAX_DOWNLOADS = int(1e6) # Maximum amount to queue when DISCOVER_NEW is False
-CYCLE_RESOLUTION = 60 * 60 * 24 # Frequency with which the workers are restarted. Determines a sensible number of documents to attempt to download based on the amount we managed last time.
+CYCLE_RESOLUTION = 24*60*60#60 * 60 * 24 # Frequency with which the workers are restarted. Determines a sensible number of documents to attempt to download based on the amount we managed last time.

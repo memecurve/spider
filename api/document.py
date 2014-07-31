@@ -56,11 +56,12 @@ def find_or_create(url):
             to_queue.append(link)
             logger.debug("Queuing {0}...".format(link))
 
-        logger.debug("Sending...")
         if DISCOVER_NEW:
-            while not p.send({'urls': to_queue}):
-                logger.warning("Failed to queue messages. Sleeping...")
-                time.sleep(1)
+            logger.debug("Sending...")
+            for i in xrange(int(len(to_queue)/50) + 1):
+                while not p.send({'urls': to_queue[i*50:(i+1)*50]}):
+                    logger.warning("Failed to queue messages. Sleeping...")
+                    time.sleep(1)
 
         d = Document(url=canonical,
                      markup=markup,
@@ -73,12 +74,12 @@ def find_or_create(url):
 
     return doc 
 
-def find_by_unix_time(since=None, until=None, limit=None):
+def find_by_unix_time(since=None, until=None, type=None, limit=None):
     i = HbaseInternals()
 
     if since is None:
-        since = i.get_timestamp() - CYCLE_RESOLUTION # Everything since the last run
+        since = i.get_timestamp() - (2*CYCLE_RESOLUTION) # Everything since the last run
     if until is None:
         until = i.get_timestamp()
 
-    return db_document.find(updated_at__lte=until, updated_at__gte=since, limit=limit)
+    return db_document.find(updated_at__lte=until, updated_at__gte=since, limit=limit, type=type)
