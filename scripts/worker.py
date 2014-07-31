@@ -39,10 +39,7 @@ def process_message(msg):
 
     for url in urls:
         logger.debug(u"Looking up/downloading candidate: {0}".format(url))
-        doc, errors = document.find_or_create(url)
-        if errors:
-            for err in errors:
-                logger.warning(err)
+        doc = document.find_or_create(url)
     if doc:
         return True
     else:

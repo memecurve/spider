@@ -1,12 +1,18 @@
 import sys
+import logging
 
 from api import canonicalize
-
 from api.services.db import HbaseInternals
-
 from api.models import Document
 
+from api.settings import LOG_LEVEL
+
 TABLE_NAME = 'document'
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.propagate = True
+logger.setLevel(LOG_LEVEL)
 
 def create(document, created_at=None):
     """
@@ -17,6 +23,7 @@ def create(document, created_at=None):
     :rtype: api.models.Document, list( str )
     :returns: The document saved to the database and a list of errors, if any.
     """
+    logger.debug("Create called.")
     internals = HbaseInternals()
     updated_at = created_at or internals.get_timestamp()
     hrefs = {u'href:{0}'.format(ref): unicode(freq) for ref, freq in document.hrefs}
@@ -30,12 +37,15 @@ def create(document, created_at=None):
                                 updated_at,
                                 document.url)
 
+    logger.debug("Writing to hbase")
     _ = internals.write(table=TABLE_NAME,
                         row_key=row_key, doc=doc)
 
     document.updated_at = updated_at
 
+    logger.debug("Querying for written document...")
     found = internals.find_one(table=TABLE_NAME, row_key=row_key)
+    logger.debug("Returning in create()")
     return hbase_to_model(found)
 
 def _get_row_range(type=None, updated_at__lte=None, updated_at__gte=None, url=None):
@@ -50,22 +60,29 @@ def _get_row_range(type=None, updated_at__lte=None, updated_at__gte=None, url=No
     :rtype: tuple( str, str )
     :returns: The starting and ending row keys for the range specified.
     """
+    logger.debug("Instantiating hbase internals")
     internals = HbaseInternals()
 
+    logger.debug("Checking type...")
     if type not in ('rss', 'sgml'):
+        logger.warning("ValueError. Invalid type.")
         raise ValueError("`type` must be one of 'rss' or 'sgml'")
     if updated_at__lte is None:
+        logger.debug("Getting lte timestamp...")
         updated_at__lte = internals.get_timestamp()
     if updated_at__gte is None:
+        logger.debug("Getting gte timestamp")
         updated_at__gte = updated_at__lte - 604800
     if url is None:
         url = ''
     else:
+        logger.debug(u"Canonicalizing url....{0}".format(url))
         url = canonicalize(url)
 
     start_row = u"{0}{1}{2}".format(type, updated_at__gte, url)
     end_row = u"{0}{1}{2}".format(type, updated_at__lte, url)
 
+    logger.debug(u"Returning {0}, {1}".format(start_row, end_row))
     return start_row, end_row
 
 def find_by_url(url=None, updated_at__lte=None, updated_at__gte=None, include_links=False, include_markup=False):
@@ -78,36 +95,42 @@ def find_by_url(url=None, updated_at__lte=None, updated_at__gte=None, include_li
     :param bool include_links: Set this equal to True to include link frequencies stored with the query results. Defaults to False.
     :param bool include_markup: Set this equal to True to include the markup for the document in the query results. Defaults to False.
     """
+    logger.debug("find_by_url() called.")
     columns = ['self']
     if include_markup:
         columns.append('data')
     if include_links:
         columns.append('href')
 
+    logger.debug("Getting row range...")
     start_row, end_row = _get_row_range(type='sgml', url=url,
                                         updated_at__lte=updated_at__lte, 
                                         updated_at__gte=updated_at__gte)
 
+    logger.debug("Instantiating internals...")
     internals = HbaseInternals()
 
+    logger.debug("Finding sgml records in find_by_url()")
     docs = [d for d in internals.find(table=TABLE_NAME,
-                                      row_prefix=start_row, row_stop=end_row,
+                                      row_start=start_row, row_stop=end_row,
                                       columns=columns, 
                                       column_filter=('self:url', url),
                                       limit=1)]
 
     if not docs:
-        start_row, end_row = _get_row_range(type='rss', 
+        start_row, end_row = _get_row_range(type='rss',
                                             url=url,
                                             updated_at__lte=updated_at__lte, 
                                             updated_at__gte=updated_at__gte)
 
+        logger.debug("Didn't find anything. Checking rss...")
         docs = internals.find(table=TABLE_NAME,
-                              row_prefix=start_row, row_stop=end_row,
+                              row_start=start_row, row_stop=end_row,
                               columns=columns, 
                               column_filter=('self:url', url),
                               limit=1)
 
+    logger.debug("Converting to models...")
     docs = [hbase_to_model(d) for row_key, d in docs]
     if docs:
         return docs[0]
@@ -136,6 +159,7 @@ def find(type=None, updated_at__lte=None, updated_at__gte=None, include_links=Fa
     internals = HbaseInternals()
 
     start_row, end_row = _get_row_range(type=type, updated_at__lte=updated_at__lte, updated_at__gte=updated_at__gte)
+    logger.debug("Finding methods with general find() method.")
     docs = internals.find(table=TABLE_NAME,
                                  row_start=start_row, row_stop=end_row,
                                  columns=columns, limit=limit)

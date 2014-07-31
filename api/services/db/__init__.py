@@ -1,4 +1,5 @@
 import datetime
+import logging
 import sys
 import time
 import pytz
@@ -18,6 +19,7 @@ from api.settings import (
     HBASE_BATCH_SIZE,
     THRIFT_HOST,
     THRIFT_PORT,
+    LOG_LEVEL,
 )
 
 from api.exceptions import HbaseServiceException
@@ -31,6 +33,12 @@ def _safe_happybase_call(f):
         except (RuntimeError, ValueError, happybase.NoConnectionsAvailable), e: # Happybase uses generic errors :(
             return None, [str(e)]
     return _f
+
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.propagate = True
+logger.setLevel(LOG_LEVEL)
 
 class HbaseInternals(object):
 
@@ -92,6 +100,8 @@ class HbaseInternals(object):
         """
         Returns a cursor of value, timestamp from a table by row prefix.
         """
+        func_params = locals()
+
         if columns is None:
             columns = []
         if column_filter is not None:
@@ -113,6 +123,8 @@ class HbaseInternals(object):
                           'columns': columns}
                 scan = self.__client.scannerOpenWithPrefix(**params)
 
+            logger.debug("Got scan: {0}".format(scan))
+
             while limit is None or limit >= 0:
                 row_list = self.__client.scannerGetList(scan, 1)
                 if not row_list:
@@ -124,16 +136,20 @@ class HbaseInternals(object):
                     if column_filter is not None and result:
                         if result[1][column] == column_value:
                             if limit is not None: limit -= 1
+                            logger.debug(u'yielding {0}'.format(result))
                             yield result
-                        else:
-                            continue
+                            raise StopIteration('done')
                     else:
                         if limit is not None: limit -= 1
+                        logger.debug(u'yielding {0}'.format(result))
                         yield result
 
         except Hbase.TApplicationException, e:
-            sys.stderr.write("Application exception\n")
+            logger.error("Application exception: {0}".format(e))
+        except Hbase.IOError, e:
+            logger.error("Got IOError: {0}. Params were: {1}".format(e, func_params))
         finally:
+            logger.debug("Closing scanner...")
             if scan is not None: self.__client.scannerClose(scan)
 
     def delete_one(self, table, row_key):
@@ -180,6 +196,9 @@ class HbaseInternals(object):
             return True
         except ValueError, e:
             return False
+
+    def get_timestamp(self):
+        return int(time.mktime(datetime.datetime.now().replace(tzinfo=LOCAL_TZ).timetuple()))
 
 
 class HappybaseInternals(object):

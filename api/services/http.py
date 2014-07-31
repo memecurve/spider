@@ -29,9 +29,11 @@ def get_markup(url):
     """
     try:
         return requests.get(url).content
-    except requests.exceptions.ConnectionError, e:
-        return u''
-    except requests.exceptions.InvalidURL, e:
+    except (requests.exceptions.ConnectionError,
+            requests.exceptions.InvalidURL,
+            requests.exceptions.TooManyRedirects,
+            requests.exceptions.ChunkedEncodingError,
+    ), e:
         return u''
 
 def get_type(markup):
