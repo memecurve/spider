@@ -20,4 +20,6 @@ RABBITMQ_URL_QUEUE = 'download-tasks'
 THRIFT_HOST = 'localhost'
 THRIFT_PORT = 9090
 
-LOG_LEVEL = logging.DEBUG
+LOG_LEVEL = logging.WARNING
+
+DISCOVER_NEW = True
