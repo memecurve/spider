@@ -84,17 +84,14 @@ class HbaseInternals(object):
         """
         scan = None
         try:
-            scan = self.__client.scannerOpen('_'.join([self.__table_prefix, table]), row_key, [])
-            row_list = self.__client.scannerGetList(scan, 1)
-            for row in row_list:
-                if row.row == row_key:
-                    return {col: tcell.value for col, tcell in row.columns.iteritems()}
-                else:
-                    return {}
+            row = self.__client.getRow('_'.join([self.__table_prefix, table]), row_key)
+            if row:
+                row = row[0]
+                return {col: tcell.value for col, tcell in row.columns.iteritems()}
+            else:
+                return {}
         except Hbase.TApplicationException, e:
-            pass
-        finally:
-            if scan is not None: self.__client.scannerClose(scan)
+            logger.error("Caught Application Error: {0}".format(e))
 
     def find(self, table, row_prefix=None, row_start=None, row_stop=None, columns=None, limit=None, column_filter=None):
         """

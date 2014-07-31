@@ -97,6 +97,7 @@ class TestHbaseInternals(unittest.TestCase):
         found = self.i.find_one(self.test_table, 'row-key-10')
         self.assertEquals(self.map_observed(found), addtl_expected[4][1])
 
+
     def test_inc_and_dec(self):
         val = self.i.inc(self.test_table, 'row-key-11', 'cf', how_much=10)
         self.assertEquals(val, 10)
@@ -113,6 +114,10 @@ class TestHbaseInternals(unittest.TestCase):
         val = self.i.dec(self.test_table, 'row-key-11', 'cf', how_much=1)
         self.assertEquals(val, -1)
 
+    def test_no_exception_when_scanning_for_gibberish(self):
+        rows = self.i.find(self.test_table, row_start='bizbaz', row_stop='foobar', column_filter=('cf:col1', 'value7'))
+
+        self.assertEquals([r for r in rows], [])
 
 if __name__ == '__main__':
     unittest.main()

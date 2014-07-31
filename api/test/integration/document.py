@@ -45,7 +45,6 @@ class DocumentTest(unittest.TestCase):
         self.assertEquals(start_row, 'rss10000http://www.google.com/')
         self.assertEquals(end_row, 'rss12345http://www.google.com/')
 
-
     def test_find_by_url(self):
         i = HbaseInternals()
 
