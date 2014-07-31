@@ -1,9 +1,8 @@
 import sys
 
 from api import canonicalize
-from api import Gatherer
 
-from api.services.db import Internals
+from api.services.db import HbaseInternals
 
 from api.models import Document
 
@@ -18,7 +17,7 @@ def create(document, created_at=None):
     :rtype: api.models.Document, list( str )
     :returns: The document saved to the database and a list of errors, if any.
     """
-    internals = Internals()
+    internals = HbaseInternals()
     updated_at = created_at or internals.get_timestamp()
     hrefs = {u'href:{0}'.format(ref): unicode(freq) for ref, freq in document.hrefs}
     doc = { u'self:url': document.url,
@@ -31,12 +30,14 @@ def create(document, created_at=None):
                                 updated_at,
                                 document.url)
 
-    _, errors = internals.write(table=TABLE_NAME,
-                                row_key=row_key, doc=doc)
+    _ = internals.write(table=TABLE_NAME,
+                        row_key=row_key, doc=doc)
 
     document.updated_at = updated_at
 
-    return document, errors
+    found = internals.find_one(table=TABLE_NAME, row_key=row_key)
+    print "Found: {0}".format(found)
+    return hbase_to_model(found)
 
 def _get_row_range(type=None, updated_at__lte=None, updated_at__gte=None, url=None):
     """
@@ -50,7 +51,7 @@ def _get_row_range(type=None, updated_at__lte=None, updated_at__gte=None, url=No
     :rtype: tuple( str, str )
     :returns: The starting and ending row keys for the range specified.
     """
-    internals = Internals()
+    internals = HbaseInternals()
 
     if type not in ('rss', 'sgml'):
         raise ValueError("`type` must be one of 'rss' or 'sgml'")
@@ -85,28 +86,33 @@ def find_by_url(url=None, updated_at__lte=None, updated_at__gte=None, include_li
         columns.append('href')
 
     start_row, end_row = _get_row_range(type='sgml', url=url,
-                                        updated_at__lte=updated_at__lte, updated_at__gte=updated_at__gte)
+                                        updated_at__lte=updated_at__lte, 
+                                        updated_at__gte=updated_at__gte)
 
-    internals = Internals()
-    g = Gatherer()
+    internals = HbaseInternals()
 
-    docs = [d for d in g.call(internals.find(table=TABLE_NAME,
-                                             row_start=start_row, row_stop=end_row,
-                                             columns=columns, filter=u"SingleColumnValueFilter ('self','url',=,'substring:{0}')".format(url),
-                                             limit=1))]
+    docs = [d for d in internals.find(table=TABLE_NAME,
+                                      row_start=start_row, row_stop=end_row,
+                                      columns=columns, 
+                                      column_filter=('self:url', url),
+                                      limit=1)]
 
     if not docs:
-        start_row, end_row = _get_row_range(type='rss', url=url,
-                                            updated_at__lte=updated_at__lte, updated_at__gte=updated_at__gte)
-        docs = g.call(internals.find(table=TABLE_NAME,
-                                     row_start=start_row, row_stop=end_row,
-                                     columns=columns, filter=u"SingleColumnValueFilter ('self','url',=,'substring:{0}')".format(url),
-                                     limit=1))
+        start_row, end_row = _get_row_range(type='rss', 
+                                            url=url,
+                                            updated_at__lte=updated_at__lte, 
+                                            updated_at__gte=updated_at__gte)
 
-    docs = [g.call(hbase_to_model(d)) for d in docs]
+        docs = internals.find(table=TABLE_NAME,
+                              row_start=start_row, row_stop=end_row,
+                              columns=columns, 
+                              column_filter=('self:url', url),
+                              limit=1)
+
+    docs = [hbase_to_model(d) for d in docs]
     if docs:
-        return docs[0], g.errors
-    return None, g.errors
+        return docs[0]
+    return None
 
 def find(type=None, updated_at__lte=None, updated_at__gte=None, include_links=False, include_markup=False, limit=None):
     """
@@ -128,15 +134,14 @@ def find(type=None, updated_at__lte=None, updated_at__gte=None, include_links=Fa
     if include_links:
         columns.append('href')
 
-    g = Gatherer()
-    internals = Internals()
+    internals = HbaseInternals()
 
     start_row, end_row = _get_row_range(type=type, updated_at__lte=updated_at__lte, updated_at__gte=updated_at__gte)
-    docs = g.call(internals.find(table=TABLE_NAME,
+    docs = internals.find(table=TABLE_NAME,
                                  row_start=start_row, row_stop=end_row,
-                                 columns=columns, limit=limit))
+                                 columns=columns, limit=limit)
 
-    return [g.call(hbase_to_model(d)) for d in docs], g.errors
+    return [hbase_to_model(d) for d in docs]
 
 def hbase_to_model(d):
     """
@@ -153,22 +158,19 @@ def hbase_to_model(d):
         }
     )
     """
-    row_key, doc = d
+    doc = d
     params = {}
     hrefs = []
-    try:
-        for k, v in doc.items():
-            split_key = k.split(':')
-            if split_key[1] == 'updated_at':
-                params[":".join(split_key[1:])] = int(v[0])
-            elif split_key[0] != 'href':
-                params[":".join(split_key[1:])] = v[0]
-            else:
-                hrefs.append((":".join(split_key[1:]), int(v[0])))
-        params['hrefs'] = hrefs
-    except (IndexError, KeyError), e:
-        return None, [u"Improperly formatted database result."]
-    return Document(**params), []
+    for k, v in doc.items():
+        split_key = k.split(':')
+        if split_key[1] == 'updated_at':
+            params[":".join(split_key[1:])] = int(v[0])
+        elif split_key[0] != 'href':
+            params[":".join(split_key[1:])] = v[0]
+        else:
+            hrefs.append((":".join(split_key[1:]), int(v[0])))
+    params['hrefs'] = hrefs
+    return Document(**params)
 
 
 

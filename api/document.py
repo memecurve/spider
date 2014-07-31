@@ -9,7 +9,6 @@ from api.models import Document
 from api.settings import LOG_LEVEL
 
 from api import canonicalize
-from api import Gatherer
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -25,12 +24,11 @@ def find_or_create(url):
     :rtype: tuple( api.models.Document, list( str ) )
     :returns: A document representing the processed url and a list of errors, if any
     """
-    g = Gatherer()
     p = mq.Producer()
 
     canonical = canonicalize(url)
     logger.debug("Canonical url: {0}".format(canonical))
-    doc = g.call(db_document.find_by_url(url=canonical))
+    doc = db_document.find_by_url(url=canonical)
     logger.debug("Doc: {0}".format(doc))
     if not doc:
         logger.debug("fetching markup...")
@@ -64,8 +62,8 @@ def find_or_create(url):
                      updated_at=int(time.mktime(datetime.datetime.utcnow().timetuple())),
                      hrefs=hrefs)
         logger.debug("Creating database document...")
-        doc = g.call(db_document.create(d))
+        doc = db_document.create(d)
 
-    return doc, g.errors
+    return doc 
 
 

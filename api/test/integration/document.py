@@ -1,12 +1,11 @@
 import unittest
 import sys
 
-from api import Gatherer
-
-from api.services.db import Internals
+from api.services.db import HbaseInternals
 from api.models import Document
 from api.services.db import document
 from api import canonicalize
+
 
 class DocumentTest(unittest.TestCase):
 
@@ -22,11 +21,9 @@ class DocumentTest(unittest.TestCase):
                      hrefs=[('http://nytimes.com', 10), ('http://usatoday.com', 50)],
                      type='rss', updated_at=updated_at)
 
-        g = Gatherer()
-
-        a_ = g.call(document.create(a, updated_at))
-        b_ = g.call(document.create(b, updated_at))
-        c_ = g.call(document.create(c, updated_at))
+        a_ = document.create(a, updated_at)
+        b_ = document.create(b, updated_at)
+        c_ = document.create(c, updated_at)
 
         self.a = a
         self.b = b
@@ -37,40 +34,40 @@ class DocumentTest(unittest.TestCase):
         self.updated_at = updated_at
 
     def tearDown(self):
-        internals = Internals()
+        internals = HbaseInternals()
         for d in [self.a_, self.b_, self.c_]:
             rk = "{0}{1}{2}".format(d.type, d.updated_at, canonicalize(d.url))
             internals.delete_one(document.TABLE_NAME, rk)
-
+    """
     def test_row_range(self):
         start_row, end_row = document._get_row_range(type='rss', updated_at__lte=12345, updated_at__gte=10000, url='http://www.google.com/')
         self.assertEquals(start_row, 'rss10000http://www.google.com/')
         self.assertEquals(end_row, 'rss12345http://www.google.com/')
 
+    """
     def test_find_by_url(self):
-        g = Gatherer()
+        i = HbaseInternals()
 
-        a__ = g.call(document.find_by_url(url=canonicalize('http://www.buzzfeed.com'),
-            updated_at__gte=self.updated_at - 1, updated_at__lte=self.updated_at + 1))
-        b__ = g.call(document.find_by_url(url=canonicalize('http://www.hulu.com'),
-            updated_at__gte=self.updated_at - 1, updated_at__lte=self.updated_at + 1))
-        c__ = g.call(document.find_by_url(url=canonicalize('http://www.feedburner.com'),
-            updated_at__gte=self.updated_at - 1, updated_at__lte=self.updated_at + 1))
+        a__ = document.find_by_url(url=canonicalize('http://www.buzzfeed.com'),
+            updated_at__gte=self.updated_at - 1, updated_at__lte=self.updated_at + 1)
+        b__ = document.find_by_url(url=canonicalize('http://www.hulu.com'),
+            updated_at__gte=self.updated_at - 1, updated_at__lte=self.updated_at + 1)
+        c__ = document.find_by_url(url=canonicalize('http://www.feedburner.com'),
+            updated_at__gte=self.updated_at - 1, updated_at__lte=self.updated_at + 1)
 
-        self.assertEquals(g.errors, [])
+        print i.find_one('document', 'rss12345677http://www.feedburner.com/')
 
         self.assertEquals(self.a_.url, a__.url)
         self.assertEquals(self.b_.url, b__.url)
         self.assertEquals(self.c_.url, c__.url)
-
+    """
     def test_create_and_find(self):
-        docs, errors = document.find(type='sgml',
+        docs = document.find(type='sgml',
                                      updated_at__lte=self.updated_at + 1,
                                      updated_at__gte=self.updated_at - 1,
                                      include_links=True,
                                      include_markup=True)
 
-        self.assertEquals(errors, [])
         self.assertEquals(len(docs), 2)
 
         for doc in docs:
@@ -85,12 +82,12 @@ class DocumentTest(unittest.TestCase):
                 self.assertEquals(doc.type, 'sgml')
                 self.assertTrue(isinstance(doc.updated_at, int))
 
-        docs, errors = document.find(type=self.c_.type,
+        docs = document.find(type=self.c_.type,
                                      updated_at__lte=self.updated_at + 1,
                                      updated_at__gte=self.updated_at - 1,
                                      include_links=False,
                                      include_markup=False)
 
-        self.assertEquals(errors, [])
         self.assertEquals(docs[0].to_dict(), {"url": "http://www.feedburner.com/", "hrefs": [], "type": "rss", "updated_at": self.updated_at})
 
+    """

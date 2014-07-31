@@ -23,13 +23,3 @@ def canonicalize(url):
         return u"{0}://{1}{2}?{3}".format(p.scheme, p.netloc, p.path or '/', urllib.urlencode(canonical_qs))
     return u"{0}://{1}{2}".format(p.scheme, p.netloc, p.path or '/')
 
-class Gatherer(object):
-
-    def __init__(self):
-        self.errors = []
-
-    def call(self, r):
-        result, errors = r
-        errors += errors
-        return result
-

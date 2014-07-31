@@ -17,4 +17,7 @@ RABBITMQ_HOST = 'localhost'
 RABBITMQ_PORT = 5672
 RABBITMQ_URL_QUEUE = 'download-tasks'
 
+THRIFT_HOST = 'localhost'
+THRIFT_PORT = 9090
+
 LOG_LEVEL = logging.DEBUG
