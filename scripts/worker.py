@@ -1,4 +1,5 @@
 import logging
+import time
 import sys
 import os 
 
@@ -8,12 +9,27 @@ sys.path = [ROOT] + sys.path
 
 from api.settings import RABBITMQ_URL_QUEUE
 from api.settings import LOG_LEVEL
+from api.settings import DISCOVER_NEW
+from api.settings import MAX_DOWNLOADS
+
 from api.services.mq import Consumer
+from api.services.mq import Producer
 from api import document
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
+
+if not DISCOVER_NEW:
+    docs = document.find_by_unix_time(limit=MAX_DOWNLOADS)
+    for i in xrange(int(len(docs)/50) + 1):
+        slce = [d.url for d in docs[i*50:(i+1)*50]]
+        p = Producer()
+        if slce:
+            while not p.send({'urls': slce}):
+                logger.warning("Failed to queue messages. Sleeping...")
+                time.sleep(1)
+
 
 def process_message(msg):
     logger.debug("Processing message in callback...")
@@ -34,7 +50,7 @@ def process_message(msg):
     logger.debug("Got {0} urls".format(len(urls)))
 
     if not urls:
-        logger.debug("No urls in message.")
+        logger.warning("No urls in message.")
         return False
 
     for url in urls:
@@ -43,6 +59,7 @@ def process_message(msg):
     if doc:
         return True
     else:
+        logger.warning(u"Didn't create a document for {0}".format(url))
         return False
 
 

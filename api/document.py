@@ -3,10 +3,15 @@ import logging
 import time
 
 from api.services.db import document as db_document
+from api.services.db import HbaseInternals
 from api.services import http
 from api.services import mq
 from api.models import Document
+from api.exceptions import SpiderException
+
 from api.settings import LOG_LEVEL
+from api.settings import DISCOVER_NEW
+from api.settings import CYCLE_RESOLUTION
 
 from api import canonicalize
 
@@ -52,18 +57,28 @@ def find_or_create(url):
             logger.debug("Queuing {0}...".format(link))
 
         logger.debug("Sending...")
-        while not p.send({'urls': to_queue}):
-            logger.debug("Failed. Sleeping...")
-            time.sleep(1)
+        if DISCOVER_NEW:
+            while not p.send({'urls': to_queue}):
+                logger.warning("Failed to queue messages. Sleeping...")
+                time.sleep(1)
 
         d = Document(url=canonical,
                      markup=markup,
                      type=type,
                      updated_at=int(time.mktime(datetime.datetime.utcnow().timetuple())),
                      hrefs=hrefs)
+
         logger.debug("Creating database document...")
         doc = db_document.create(d)
 
     return doc 
 
+def find_by_unix_time(since=None, until=None, limit=None):
+    i = HbaseInternals()
 
+    if since is None:
+        since = i.get_timestamp() - CYCLE_RESOLUTION # Everything since the last run
+    if until is None:
+        until = i.get_timestamp()
+
+    return db_document.find(updated_at__lte=until, updated_at__gte=since, limit=limit)

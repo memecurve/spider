@@ -164,7 +164,8 @@ def find(type=None, updated_at__lte=None, updated_at__gte=None, include_links=Fa
                                  row_start=start_row, row_stop=end_row,
                                  columns=columns, limit=limit)
 
-    return [hbase_to_model(d) for row_key, d in docs]
+    for row_key, d in docs:
+        yield hbase_to_model(d)
 
 def hbase_to_model(d):
     """
