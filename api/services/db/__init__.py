@@ -20,6 +20,8 @@ from api.settings import (
     THRIFT_PORT,
 )
 
+from api.exceptions import HbaseServiceException
+
 LOCAL_TZ = pytz.utc
 
 def _safe_happybase_call(f):
@@ -94,37 +96,43 @@ class HbaseInternals(object):
             columns = []
         if column_filter is not None:
             column, column_value = column_filter
-        sys.stderr.write("{0}\n".format(column_filter))
+        if not row_prefix and not row_start:
+            raise HbaseServiceException("Either row_prefix or row_start is a required parameter.")
+
         scan = None
         try:
-            sys.stderr.write("Row prefix: {0}\n".format(row_prefix or row_start))
-            scan = self.__client.scannerOpenWithPrefix('_'.join([self.__table_prefix, table]),
-                                                       startAndPrefix=row_prefix or row_start,
-                                                       columns=columns)
+            if row_stop is not None:
+                params = {'tableName': '_'.join([self.__table_prefix, table]),
+                          'startRow': row_prefix or row_start,
+                          'stopRow': row_stop,
+                          'columns': columns}
+                scan = self.__client.scannerOpenWithStop(**params)
+            else:
+                params = {'tableName': '_'.join([self.__table_prefix, table]),
+                          'startAndPrefix': row_prefix or row_start,
+                          'columns': columns}
+                scan = self.__client.scannerOpenWithPrefix(**params)
+
             while limit is None or limit >= 0:
-                if limit is not None: limit -= 1
                 row_list = self.__client.scannerGetList(scan, 1)
                 if not row_list:
-                    sys.stderr.write("No row list.\n")
                     break
                 for row in row_list:
-                    sys.stderr.write("Got row: {0}\n".format(row))
                     if row_stop is not None and row.row.startswith(row_stop):
-                        sys.stderr.write("Stopping iteration\n")
                         raise StopIteration('done')
                     result = (row.row, {col: tcell.value for col, tcell in row.columns.iteritems()})
                     if column_filter is not None and result:
                         if result[1][column] == column_value:
+                            if limit is not None: limit -= 1
                             yield result
                         else:
-                            sys.stderr.write("Skipping: {0}={1}: {2}".format(column, column_value, result))
                             continue
                     else:
+                        if limit is not None: limit -= 1
                         yield result
 
         except Hbase.TApplicationException, e:
             sys.stderr.write("Application exception\n")
-            pass
         finally:
             if scan is not None: self.__client.scannerClose(scan)
 

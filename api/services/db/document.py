@@ -36,7 +36,6 @@ def create(document, created_at=None):
     document.updated_at = updated_at
 
     found = internals.find_one(table=TABLE_NAME, row_key=row_key)
-    print "Found: {0}".format(found)
     return hbase_to_model(found)
 
 def _get_row_range(type=None, updated_at__lte=None, updated_at__gte=None, url=None):
@@ -92,7 +91,7 @@ def find_by_url(url=None, updated_at__lte=None, updated_at__gte=None, include_li
     internals = HbaseInternals()
 
     docs = [d for d in internals.find(table=TABLE_NAME,
-                                      row_start=start_row, row_stop=end_row,
+                                      row_prefix=start_row, row_stop=end_row,
                                       columns=columns, 
                                       column_filter=('self:url', url),
                                       limit=1)]
@@ -104,12 +103,12 @@ def find_by_url(url=None, updated_at__lte=None, updated_at__gte=None, include_li
                                             updated_at__gte=updated_at__gte)
 
         docs = internals.find(table=TABLE_NAME,
-                              row_start=start_row, row_stop=end_row,
+                              row_prefix=start_row, row_stop=end_row,
                               columns=columns, 
                               column_filter=('self:url', url),
                               limit=1)
 
-    docs = [hbase_to_model(d) for d in docs]
+    docs = [hbase_to_model(d) for row_key, d in docs]
     if docs:
         return docs[0]
     return None
@@ -141,7 +140,7 @@ def find(type=None, updated_at__lte=None, updated_at__gte=None, include_links=Fa
                                  row_start=start_row, row_stop=end_row,
                                  columns=columns, limit=limit)
 
-    return [hbase_to_model(d) for d in docs]
+    return [hbase_to_model(d) for row_key, d in docs]
 
 def hbase_to_model(d):
     """
@@ -164,11 +163,11 @@ def hbase_to_model(d):
     for k, v in doc.items():
         split_key = k.split(':')
         if split_key[1] == 'updated_at':
-            params[":".join(split_key[1:])] = int(v[0])
+            params[":".join(split_key[1:])] = int(v)
         elif split_key[0] != 'href':
-            params[":".join(split_key[1:])] = v[0]
+            params[":".join(split_key[1:])] = v
         else:
-            hrefs.append((":".join(split_key[1:]), int(v[0])))
+            hrefs.append((":".join(split_key[1:]), int(v)))
     params['hrefs'] = hrefs
     return Document(**params)
 

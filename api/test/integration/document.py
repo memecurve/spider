@@ -37,14 +37,15 @@ class DocumentTest(unittest.TestCase):
         internals = HbaseInternals()
         for d in [self.a_, self.b_, self.c_]:
             rk = "{0}{1}{2}".format(d.type, d.updated_at, canonicalize(d.url))
+
             internals.delete_one(document.TABLE_NAME, rk)
-    """
+
     def test_row_range(self):
         start_row, end_row = document._get_row_range(type='rss', updated_at__lte=12345, updated_at__gte=10000, url='http://www.google.com/')
         self.assertEquals(start_row, 'rss10000http://www.google.com/')
         self.assertEquals(end_row, 'rss12345http://www.google.com/')
 
-    """
+
     def test_find_by_url(self):
         i = HbaseInternals()
 
@@ -55,12 +56,12 @@ class DocumentTest(unittest.TestCase):
         c__ = document.find_by_url(url=canonicalize('http://www.feedburner.com'),
             updated_at__gte=self.updated_at - 1, updated_at__lte=self.updated_at + 1)
 
-        print i.find_one('document', 'rss12345677http://www.feedburner.com/')
 
         self.assertEquals(self.a_.url, a__.url)
         self.assertEquals(self.b_.url, b__.url)
         self.assertEquals(self.c_.url, c__.url)
-    """
+
+
     def test_create_and_find(self):
         docs = document.find(type='sgml',
                                      updated_at__lte=self.updated_at + 1,
@@ -90,4 +91,4 @@ class DocumentTest(unittest.TestCase):
 
         self.assertEquals(docs[0].to_dict(), {"url": "http://www.feedburner.com/", "hrefs": [], "type": "rss", "updated_at": self.updated_at})
 
-    """
+

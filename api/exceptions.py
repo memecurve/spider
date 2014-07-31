@@ -7,5 +7,11 @@ class MissingParameters(SpiderException):
 class ExtraParameters(SpiderException):
     pass
 
-class StopConsuming(SpiderException):
+class MqServiceException(SpiderException):
+    pass
+
+class StopConsuming(MqServiceException):
+    pass
+
+class HbaseServiceException(SpiderException):
     pass

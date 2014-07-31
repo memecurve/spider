@@ -1,4 +1,3 @@
-"""
 from __future__ import absolute_import
 
 import sys
@@ -39,7 +38,6 @@ class TestHbaseInternals(unittest.TestCase):
         try:
             return {k: v for k, v in observed.items()}
         except Exception, e:
-            print "Observed:", observed
             raise e
 
     def test_read_and_write_one(self):
@@ -59,12 +57,15 @@ class TestHbaseInternals(unittest.TestCase):
 
         self.assertEquals(expected, observed)
 
+    def test_find_by_column_value(self):
+        row = self.i.find(self.test_table, row_prefix='row', column_filter=('cf:col1', 'value7'))
+        self.assertEquals([r for r in row], [self.expected[3]])
+
     def test_delete_one(self):
         self.i.delete_one(self.test_table, 'row-key-3')
         for row_key, expected_doc in self.expected:
             observed_doc = self.i.find_one(self.test_table, row_key)
             if row_key == 'row-key-3':
-                print "Found doc with row key: row-key-3:", observed_doc
                 self.assertEquals(observed_doc, {})
             else:
                 self.assertEquals(self.map_observed(observed_doc), expected_doc)
@@ -112,6 +113,7 @@ class TestHbaseInternals(unittest.TestCase):
         val = self.i.dec(self.test_table, 'row-key-11', 'cf', how_much=1)
         self.assertEquals(val, -1)
 
+
 if __name__ == '__main__':
     unittest.main()
-"""
+
