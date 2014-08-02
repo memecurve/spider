@@ -34,6 +34,7 @@ def find_or_create(url):
 
     canonical = canonicalize(url)
     doc = db_document.find_by_url(url=canonical)
+    wc = WordCount()
     if not doc:
         markup = http.get_markup(url)
         type = http.get_type(markup)
@@ -43,7 +44,7 @@ def find_or_create(url):
         elif type == 'sgml':
             links = http.links_from_sgml(markup)
             word_counts = http.wordcounts_from_sgml(markup)
-            WordCount.store(word_counts)
+            wc.store(word_counts)
 
         hrefs = http.hrefs_from_links(base, links)
 
