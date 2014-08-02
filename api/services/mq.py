@@ -60,10 +60,11 @@ class Consumer(object):
     def __init__(self, queue=None, callback=None):
         logger.debug("Consumer Connecting...")
         self.__cfg = pika.ConnectionParameters(host=RABBITMQ_HOST, port=RABBITMQ_PORT, heartbeat_interval=2)
-        self.__conn = pika.BlockingConnection(self.__cfg)
+        self.__conn = pika.SelectConnection(self.__cfg)
+        self.__conn.ioloop.start()
         logger.debug("Connected..")
         logger.debug("Opening channel")
-        self.__channel = self.__conn.channel()
+        self.__channel = self.__conn.channel(lambda *args, **kwargs: None)
         self.__callback = callback
         self.__queue = queue
 
@@ -97,6 +98,7 @@ class Consumer(object):
         self.__channel.start_consuming()
 
     def stop(self):
+        self.__conn.ioloop.stop()
         self.__channel.stop_consuming()
 
 def pass_urls(callback, daemonize=None):
