@@ -57,10 +57,18 @@ class Consumer(object):
 
     TIMEOUT = False
 
+    def on_connection(self):
+        self.__channel = self.__conn.channel(lambda *args, **kwargs)
+        self.__channel.add_on_close_callback(self.stop)
+        self.__channel.basic_consume(self.__f,
+                                     queue=self.__queue,
+                                     no_ack=False)
+
+
     def __init__(self, queue=None, callback=None):
         logger.debug("Consumer Connecting...")
         self.__cfg = pika.ConnectionParameters(host=RABBITMQ_HOST, port=RABBITMQ_PORT, heartbeat_interval=2)
-        self.__conn = pika.SelectConnection(self.__cfg)
+        self.__conn = pika.SelectConnection(self.__cfg, self.on_connection)
         logger.debug("Connected..")
         logger.debug("Opening channel")
         self.__channel = self.__conn.channel(lambda *args, **kwargs: None)
@@ -87,19 +95,14 @@ class Consumer(object):
 
         self.__f = f
 
-    def consume_one(self):
-        self.__channel.basic_consume(self.__f,
-                                     queue=self.__queue,
-                                     no_ack=False)
-
     def start(self):
-        self.consume_one()
         self.__conn.ioloop.start()
-        self.__channel.start_consuming()
 
     def stop(self):
-        self.__conn.ioloop.stop()
-        self.__channel.stop_consuming()
+        try:
+            self.__conn.ioloop.stop()
+        finally:
+            self.__conn.close()
 
 def pass_urls(callback, daemonize=None):
     """
