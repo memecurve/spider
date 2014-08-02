@@ -69,35 +69,33 @@ class Consumer(object):
         logger.debug("Opening channel")
         self.__channel = channel
         channel.add_on_close_callback(self.stop)
-        channel.basic_consume(self.__f,
+        channel.basic_consume(self.on_receive,
                               queue=self.__queue,
                               no_ack=False)
 
-
     def __init__(self, queue=None, callback=None):
         logger.debug("Consumer Connecting...")
-        self.__cfg = pika.ConnectionParameters(host=RABBITMQ_HOST, port=RABBITMQ_PORT, heartbeat_interval=2)
-        pika.SelectConnection(self.__cfg, self.on_connection)
+        cfg = pika.ConnectionParameters(host=RABBITMQ_HOST, port=RABBITMQ_PORT, heartbeat_interval=2)
+        self.__conn = pika.SelectConnection(cfg, self.on_connection)
         self.__callback = callback
         self.__queue = queue
 
 
-        def f(ch, method, properties, body):
-            logger.debug("Executing receive callback...")
-            logger.debug(u"{0}".format(body))
-            msg = json.loads(body)
-            if isinstance(msg, (dict)):
-                logger.debug("Message is a dict")
-            elif isinstance(msg, (unicode, str)):
-                logger.debug("Message is a string")
-            if callback(msg):
-                logger.debug("acking")
-                ch.basic_ack(delivery_tag=method.delivery_tag)
-            else:
-                logger.debug("NOT acking")
-                ch.basic_reject(delivery_tag=method.delivery_tag, requeue=False)
 
-        self.__f = f
+    def on_receive(self, ch, method, properties, body):
+        logger.debug("Executing receive callback...")
+        logger.debug(u"{0}".format(body))
+        msg = json.loads(body)
+        if isinstance(msg, (dict)):
+            logger.debug("Message is a dict")
+        elif isinstance(msg, (unicode, str)):
+            logger.debug("Message is a string")
+        if self.__callback(msg):
+            logger.debug("acking")
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+        else:
+            logger.error("REJECTING")
+            ch.basic_reject(delivery_tag=method.delivery_tag, requeue=False)
 
     def start(self):
         self.__conn.ioloop.start()
