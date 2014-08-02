@@ -57,26 +57,30 @@ class Consumer(object):
 
     TIMEOUT = False
 
-    def on_connection(self):
-        self.__channel = self.__conn.channel(lambda *args, **kwargs)
-        self.__channel.add_on_close_callback(self.stop)
-        self.__channel.basic_consume(self.__f,
-                                     queue=self.__queue,
-                                     no_ack=False)
+    def on_connection(self, connection):
+        logger.debug("Connected..")
+        self.__conn = connection
+        self.__conn.channel(self.on_channel_open)
+
+        if Consumer.TIMEOUT:
+            self.__conn.add_timeout(Consumer.TIMEOUT, self.stop)
+
+    def on_channel_open(self, channel):
+        logger.debug("Opening channel")
+        self.__channel = channel
+        channel.add_on_close_callback(self.stop)
+        channel.basic_consume(self.__f,
+                              queue=self.__queue,
+                              no_ack=False)
 
 
     def __init__(self, queue=None, callback=None):
         logger.debug("Consumer Connecting...")
         self.__cfg = pika.ConnectionParameters(host=RABBITMQ_HOST, port=RABBITMQ_PORT, heartbeat_interval=2)
-        self.__conn = pika.SelectConnection(self.__cfg, self.on_connection)
-        logger.debug("Connected..")
-        logger.debug("Opening channel")
-        self.__channel = self.__conn.channel(lambda *args, **kwargs: None)
+        pika.SelectConnection(self.__cfg, self.on_connection)
         self.__callback = callback
         self.__queue = queue
 
-        if Consumer.TIMEOUT:
-            self.__conn.add_timeout(Consumer.TIMEOUT, self.stop)
 
         def f(ch, method, properties, body):
             logger.debug("Executing receive callback...")
