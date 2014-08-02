@@ -122,27 +122,21 @@ class HbaseInternals(object):
             logger.debug("Got scan: {0}".format(scan))
 
             while limit is None or limit >= 0:
-                logger.debug("{0} Getting row with scannerGet()".format(scan))
                 row = self.__client.scannerGet(scan)
                 if not row:
-                    logger.debug("{0} No row found. raising StopIteration.".format(scan))
                     raise StopIteration('done')
                 row = row[0]
                 if row_stop is not None and row.row.startswith(row_stop):
-                    logger.debug("{0} Row starts with row_stop prefix. raising StopIteration".format(scan))
                     raise StopIteration('done')
 
                 result = (row.row, {col: tcell.value for col, tcell in row.columns.iteritems()})
 
                 if column_filter is not None:
-                    logger.debug("{0} Column filter is not None.".format(scan))
                     if result[1][column] == column_value:
                         if limit is not None: limit -= 1
                         logger.debug(u'yielding just one result. {0}'.format(result))
                         yield result
                         raise StopIteration('done')
-                    else:
-                        logger.debug('{3} row {0}\'s result column doesn"t match value: {1} != {2}. Continunig'.format(row.row, result[1][column], column_value, scan))
                 else:
                     if limit is not None: limit -= 1
                     logger.debug(u'yielding for no column filter {0}'.format(result))
