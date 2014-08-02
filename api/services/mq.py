@@ -66,6 +66,7 @@ class Consumer(object):
         self.__channel = self.__conn.channel()
         self.__callback = callback
         self.__queue = queue
+        self.__conn.ioloop.start()
 
         if Consumer.TIMEOUT:
             self.__conn.add_timeout(Consumer.TIMEOUT, self.stop)
@@ -97,6 +98,7 @@ class Consumer(object):
         self.__channel.start_consuming()
 
     def stop(self):
+        self.ioloop.stop()
         self.__channel.stop_consuming()
 
 def pass_urls(callback, daemonize=None):
