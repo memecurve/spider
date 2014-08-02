@@ -10,7 +10,8 @@ HBASE_SCHEMA = [
     ('test', {'cf': {}}),
     ('document', {'self': {'max_versions': 1}, # self:url, self:type, self:updated_at
                   'data': {'max_versions': 1},
-                  'href': {'max_versions': 1} })# [{href:www.buzzfeed.com: 1}] List of dicts})
+                  'href': {'max_versions': 1} }),# [{href:www.buzzfeed.com: 1}] List of dicts})
+    ('wordcount')
 ]
 
 RABBITMQ_HOST = 'localhost'
@@ -35,3 +36,19 @@ Spider settings.
 DISCOVER_NEW = False # Should we queue new links as they're discovered?
 MAX_DOWNLOADS = int(1e6) # Maximum amount to queue when DISCOVER_NEW is False
 CYCLE_RESOLUTION = 24*60*60#60 * 60 * 24 # Frequency with which the workers are restarted. Determines a sensible number of documents to attempt to download based on the amount we managed last time.
+ILLEGAL_CHARS = u'-+-/{[}]!.%$#@&*()-=_,.<>?/\\\"~`|^'
+STOP_WORDS = {'a','about','above','after','again','against','all','am','an','and','any','are',
+              'arent','as','at','be','because','been','before','being','below','between','both',
+              'but','by','cant','cannot','could','couldnt','did','didnt','do','does','doesnt',
+              'doing','dont','down','during','each','few','for','from','further','had','hadnt',
+              'has','hasnt','have','havent','having','he','hed','hes','her','here','heres',
+              'hers','herself','him','himself','his','how','hows','i','id','ill','im','ive','if',
+              'in','into','is','isnt','it','its','itself','lets','me','more','most','mustnt',
+              'my','myself','no','nor','not','of','off','on','once','only','or','other','ought',
+              'our','ours','ourselves','out','over','own','same','shant','she',
+              'shes','should','shouldnt','so','some','such','than','that','thats','the','their',
+              'theirs','them','themselves','then','there','theres','these','they','theyd','theyll',
+              'theyre','theyve','this','those','through','to','too','under','until','up','very','was',
+              'wasnt','we','well','were','weve','were','werent','what','whats','when','whens',
+              'where','wheres','which','while','who','whos','whom','why','whys','with','wont','would',
+              'wouldnt','you','youd','youll','youre','youve','your', 'yours', 'yourself'}

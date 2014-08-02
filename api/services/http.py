@@ -1,4 +1,5 @@
 import sys
+import re
 import logging
 from urlparse import urlparse
 from collections import defaultdict
@@ -10,6 +11,8 @@ from bs4 import BeautifulSoup
 from api import canonicalize
 from api.settings import LOG_LEVEL
 from api.settings import EXTENSION_BLACKLIST
+from api.settings import ILLEGAL_CHARS
+from api.settings import STOP_WORDS
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -125,3 +128,25 @@ def base_from_url(url):
     """
     u = urlparse(url)
     return u"{0}://{1}".format(u.scheme, u.netloc)
+
+def wordcounts_from_sgml(markup):
+    """
+    Given a body of markup; returns a dict of {unicode => int} representing the frequency of each word in the document.
+
+    ILLEGAL_CHARS are replaced with '' and STOP_WORDS as well as non-alpha-numerics are not included.
+    """
+    text = BeautifulSoup(markup).get_text().lower()
+    for char in ILLEGAL_CHARS:
+        text.replace(char, '')
+
+    all_words = re.split(r'\s+', text)
+    counts = defaultdict(int)
+    for word in all_words:
+        if not word.isalnum():
+            continue
+        if word in STOP_WORDS:
+            continue
+        counts[word] += 1
+
+    return counts
+
