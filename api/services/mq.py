@@ -22,7 +22,7 @@ class Producer(object):
 
     def __init__(self, queue=None, callback=None):
         logger.debug("Connecting...")
-        self.__cfg = pika.ConnectionParameters(host=RABBITMQ_HOST, port=RABBITMQ_PORT)
+        self.__cfg = pika.ConnectionParameters(host=RABBITMQ_HOST, port=RABBITMQ_PORT, heartbeat_interval=2)
         self.__conn = pika.BlockingConnection(self.__cfg)
         logger.debug("Connected.")
         logger.debug("Opening channel...")
