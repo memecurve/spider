@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 
 from api import canonicalize
 from api.settings import LOG_LEVEL
+from api.settings import EXTENSION_BLACKLIST
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -63,6 +64,12 @@ def links_from_sgml(markup):
     for link in bs4_links:
         href = link.get('href', '')
         u = urlparse(href)
+        blacklisted = False
+        for extension in EXTENSION_BLACKLIST:
+            if u.path.endswith(extension):
+                blacklisted = True
+        if blacklisted:
+            continue
         if u.scheme.lower() == 'javascript':
             continue
         if u.scheme and u.netloc: # Absolute href

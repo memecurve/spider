@@ -1,7 +1,7 @@
 import logging
 
-HBASE_HOST = '127.0.0.1'
-HBASE_PORT = 9090
+HBASE_HOST = 'ec2-54-191-184-239.us-west-2.compute.amazonaws.com'
+HBASE_PORT = 10004 
 HBASE_TABLE_PREFIX = 'spider'
 HBASE_CONN_POOL_SIZE = 3
 HBASE_BATCH_SIZE = 100
@@ -22,6 +22,11 @@ THRIFT_PORT = 9090
 
 LOG_LEVEL = logging.DEBUG
 
+EXTENSION_BLACKLIST = ['.jpg', '.gif',
+                       '.jpeg', '.png',
+                       '.tif', '.tiff',
+                       '.mp3', '.mp4',
+                       '.wmv', '.mov']
 
 """
 Spider settings.
