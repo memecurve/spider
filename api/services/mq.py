@@ -59,8 +59,8 @@ class Consumer(object):
 
     def __init__(self, queue=None, callback=None):
         logger.debug("Consumer Connecting...")
-        self.__cfg = pika.ConnectionParameters(host=RABBITMQ_HOST, port=RABBITMQ_PORT)
-        self.__conn = pika.BlockingConnection(self.__cfg)
+        self.__cfg = pika.ConnectionParameters(host=RABBITMQ_HOST, port=RABBITMQ_PORT, heartbeat_interval=2)
+        self.__conn = pika.SelectConnection(self.__cfg)
         logger.debug("Connected..")
         logger.debug("Opening channel")
         self.__channel = self.__conn.channel()
