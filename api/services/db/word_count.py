@@ -21,6 +21,5 @@ class WordCount(HbaseInternals):
         :param dict( unicode, int ) word_counts: The word counts to record.
         """
         for word, freq in word_counts.iteritems():
-            row_key = u"{0}".format(word)
-            self.inc(table=self.TABLE, row_key=row_key, column_family=str(self.get_bin()), how_much=freq)
+            self.inc(table=self.TABLE, row_key=word, column_family=str(self.get_bin()), how_much=freq)
 
