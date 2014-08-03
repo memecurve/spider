@@ -22,7 +22,7 @@ class Producer(object):
 
     def __init__(self, queue=None, callback=None):
         logger.debug("Connecting...")
-        self.__cfg = pika.ConnectionParameters(host=RABBITMQ_HOST, port=RABBITMQ_PORT, heartbeat_interval=2)
+        self.__cfg = pika.ConnectionParameters(host=RABBITMQ_HOST, port=RABBITMQ_PORT)
         self.__conn = pika.BlockingConnection(self.__cfg)
         logger.debug("Connected.")
         logger.debug("Opening channel...")
@@ -30,7 +30,6 @@ class Producer(object):
         self.__queue = queue
 
         logger.debug("Setting confirm delivery")
-        self.__channel.confirm_delivery()
 
         if Producer.TIMEOUT:
             logger.debug("Setting timeout callback")
@@ -45,6 +44,7 @@ class Producer(object):
 
         :param object message: The message to queue.
         """
+        self.__channel.confirm_delivery()
         return self.__channel.basic_publish(exchange='',
                                             routing_key=RABBITMQ_URL_QUEUE,
                                             body=json.dumps(message),
