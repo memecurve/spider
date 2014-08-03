@@ -22,3 +22,6 @@ class WordCount(HbaseInternals):
         for word, freq in word_counts.iteritems():
             row_key = u"{0}".format(word)
             self.inc(table=self.TABLE, row_key=row_key, column_family=self.get_bin(), how_much=freq)
+
+    def __new__(cls, *args, **kwargs):
+        return super(WordCount, cls).__new__(cls, *args, **kwargs)
