@@ -28,11 +28,11 @@ def get_markup(url):
 
     :param str url: The url for a resource to download
 
-    :rtype: str
+    :rtype: unicode
     :returns: A string representation of the markup
     """
     try:
-        return requests.get(url).content
+        return requests.get(url).text
     except (requests.exceptions.ConnectionError,
             requests.exceptions.InvalidURL,
             requests.exceptions.TooManyRedirects,
