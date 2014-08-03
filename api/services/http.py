@@ -137,7 +137,7 @@ def wordcounts_from_sgml(markup):
     """
     text = BeautifulSoup(markup).get_text().lower()
     for char in ILLEGAL_CHARS:
-        text.replace(char, '')
+        text.replace(char, u'')
 
     all_words = re.split(r'\s+', text)
     counts = defaultdict(int)
@@ -146,7 +146,7 @@ def wordcounts_from_sgml(markup):
             continue
         if word in STOP_WORDS:
             continue
-        counts[word] += 1
+        counts[unicode(word)] += 1
 
     return counts
 
