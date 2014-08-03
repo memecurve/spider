@@ -3,6 +3,7 @@ from api.services.db import HbaseInternals
 class WordCount(HbaseInternals):
 
     TABLE = 'wordcount'
+    _instance = None
 
     def get_bin(self):
         """
@@ -23,5 +24,3 @@ class WordCount(HbaseInternals):
             row_key = u"{0}".format(word)
             self.inc(table=self.TABLE, row_key=row_key, column_family=self.get_bin(), how_much=freq)
 
-    def __new__(cls, *args, **kwargs):
-        return super(WordCount, cls).__new__(cls, *args, **kwargs)
