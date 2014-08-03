@@ -38,6 +38,6 @@ class WordCount(HbaseInternals):
                 logging.debug("Up to: {0}".format(total))
             except UnicodeEncodeError, e:
                 logging.warning("Caught UnicodeEncodeError: {0}".format(e))
-                total = self.inc(table=self.TABLE, row_key=word.encode('utf-8'), column_family=str(self.get_bin()), how_much=freq)
+                total = self.inc(table=self.TABLE, row_key=word.decode('utf-8'), column_family=str(self.get_bin()), how_much=freq)
                 logging.debug("Up to: {0}".format(total))
 
