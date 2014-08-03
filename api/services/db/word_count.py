@@ -1,4 +1,13 @@
+import logging
+
 from api.services.db import HbaseInternals
+from api.settings import LOG_LEVEL
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.propagate = True
+logger.setLevel(LOG_LEVEL)
+
 
 class WordCount(HbaseInternals):
 
@@ -21,8 +30,14 @@ class WordCount(HbaseInternals):
         :param dict( unicode, int ) word_counts: The word counts to record.
         """
         for word, freq in word_counts.iteritems():
+            logging.debug("Logging count, {0}, for ".format(freq))
+            logging.debug(word)
+
             try:
-                self.inc(table=self.TABLE, row_key=word, column_family=str(self.get_bin()), how_much=freq)
+                total = self.inc(table=self.TABLE, row_key=word, column_family=str(self.get_bin()), how_much=freq)
+                logging.debug("Up to: {0}".format(total))
             except UnicodeEncodeError, e:
-                self.inc(table=self.TABLE, row_key=word.encode('utf8'), column_family=str(self.get_bin()), how_much=freq)
+                logging.warning("Caught UnicodeEncodeError: {0}".format(e))
+                total = self.inc(table=self.TABLE, row_key=word.encode('utf8'), column_family=str(self.get_bin()), how_much=freq)
+                logging.debug("Up to: {0}".format(total))
 
