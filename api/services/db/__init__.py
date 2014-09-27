@@ -149,6 +149,7 @@ class HbaseInternals(object):
         finally:
             logger.debug("{0} Closing scanner...".format(scan))
             if scan is not None: self.__client.scannerClose(scan)
+            logger.debug("{0} Closed.".format(scan))
 
     def delete_one(self, table, row_key):
         return self.__client.deleteAllRow("_".join([self.__table_prefix, table]), row_key)

@@ -38,6 +38,12 @@ class Producer(object):
     def ontimeout(self):
         pass
 
+    def __del__(self):
+        try:
+            self.__conn.close()
+        except pika.exceptions.AMQPError, e:
+            pass
+
     def send(self, message):
         """
         Sends a json serializeable python object

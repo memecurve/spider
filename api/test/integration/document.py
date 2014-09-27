@@ -62,11 +62,11 @@ class DocumentTest(unittest.TestCase):
 
 
     def test_create_and_find(self):
-        docs = document.find(type='sgml',
+        docs = [d for d in document.find(type='sgml',
                                      updated_at__lte=self.updated_at + 1,
                                      updated_at__gte=self.updated_at - 1,
                                      include_links=True,
-                                     include_markup=True)
+                                     include_markup=True)]
 
         self.assertEquals(len(docs), 2)
 
@@ -82,11 +82,11 @@ class DocumentTest(unittest.TestCase):
                 self.assertEquals(doc.type, 'sgml')
                 self.assertTrue(isinstance(doc.updated_at, int))
 
-        docs = document.find(type=self.c_.type,
+        docs = [d for d in document.find(type=self.c_.type,
                                      updated_at__lte=self.updated_at + 1,
                                      updated_at__gte=self.updated_at - 1,
                                      include_links=False,
-                                     include_markup=False)
+                                     include_markup=False)]
 
         self.assertEquals(docs[0].to_dict(), {"url": "http://www.feedburner.com/", "hrefs": [], "type": "rss", "updated_at": self.updated_at})
 

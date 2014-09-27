@@ -20,19 +20,6 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
-if not DISCOVER_NEW:
-    docs = set([d.url for d in document.find_by_unix_time(limit=MAX_DOWNLOADS, type='rss')])
-    if len(docs) < MAX_DOWNLOADS:
-        docs = docs.union(set([d.url for d in document.find_by_unix_time(limit=MAX_DOWNLOADS - len(docs), type='sgml')]))
-    docs = list(docs)
-    for i in xrange(int(len(docs)/50) + 1):
-        slce = [d for d in docs[i*50:(i+1)*50]]
-        p = Producer()
-        if slce:
-            while not p.send({'urls': slce}):
-                logger.warning("Failed to queue messages. Sleeping...")
-                time.sleep(1)
-
 
 def process_message(msg):
     logger.debug("Processing message in callback...")
@@ -67,6 +54,18 @@ def process_message(msg):
 
 
 if __name__ == '__main__':
+    if not DISCOVER_NEW:
+        docs = set([d.url for d in document.find_by_unix_time(limit=MAX_DOWNLOADS, type='rss')])
+        if len(docs) < MAX_DOWNLOADS:
+            docs = docs.union(set([d.url for d in document.find_by_unix_time(limit=MAX_DOWNLOADS - len(docs), type='sgml')]))
+        docs = list(docs)
+        for i in xrange(int(len(docs)/50) + 1):
+            slce = [d for d in docs[i*50:(i+1)*50]]
+            p = Producer()
+            if slce:
+                while not p.send({'urls': slce}):
+                    logger.warning("Failed to queue messages. Sleeping...")
+                    time.sleep(1)
     logger.debug("Consuming...")
     c = Consumer(callback=process_message, queue=RABBITMQ_URL_QUEUE)
     c.start()

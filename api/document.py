@@ -34,18 +34,26 @@ def find_or_create(url):
 
     canonical = canonicalize(url)
     doc = db_document.find_by_url(url=canonical)
+    logger.debug("Instantiating word count...")
     wc = WordCount()
     if not doc:
+        logger.debug("Downloading markup...")
         markup = http.get_markup(url)
         type = http.get_type(markup)
+        logger.debug("Type is {0}".format(type))
         base = http.base_from_url(url)
         if type == 'rss':
+            logger.debug("Getting links from rss")
             links = http.links_from_rss(markup)
         elif type == 'sgml':
+            logger.debug("Getting links from sgml")
             links = http.links_from_sgml(markup)
+            logger.debug("Getting wordcounts from sgml...")
             word_counts = http.wordcounts_from_sgml(markup)
+            logger.debug("Storing word counts.")
             wc.store(word_counts)
 
+        logger.debug("Gettings hrefs from links..")
         hrefs = http.hrefs_from_links(base, links)
 
         to_queue = []

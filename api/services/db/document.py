@@ -135,7 +135,9 @@ def find_by_url(url=None, updated_at__lte=None, updated_at__gte=None, include_li
     logger.debug("Converting to models...")
     docs = [hbase_to_model(d) for row_key, d in docs]
     if docs:
+        logger.debug("Returning a single doc: {0}".format(docs[0]))
         return docs[0]
+    logger.debug("Returning noting.")
     return None
 
 def find(type=None, updated_at__lte=None, updated_at__gte=None, include_links=False, include_markup=False, limit=None):

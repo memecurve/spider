@@ -9,10 +9,12 @@ logger.propagate = True
 logger.setLevel(LOG_LEVEL)
 
 
-class WordCount(HbaseInternals):
+class WordCount(object):
+
+    def __init__(self):
+        self.i = HbaseInternals()
 
     TABLE = 'wordcount'
-    _instance = None
 
     def get_bin(self):
         """
@@ -20,7 +22,7 @@ class WordCount(HbaseInternals):
 
         :rtype int: The bin as a unix timestamp
         """
-        return int(self.get_timestamp()/15) * 15
+        return int(self.i.get_timestamp()/15) * 15
 
     def store(self, word_counts):
         """
@@ -29,14 +31,16 @@ class WordCount(HbaseInternals):
 
         :param dict( unicode, int ) word_counts: The word counts to record.
         """
+        logging.debug("Called store. {0}".format(word_counts))
         for word, freq in word_counts.iteritems():
             logging.debug("Logging count, {0}, for ".format(freq))
             logging.debug(word)
             try:
-                total = self.inc(table=self.TABLE, row_key=word, column_family=unicode(self.get_bin()), how_much=freq)
+                logger.debug(u"Storing {0} counts of {1}".format(freq, word))
+                total = self.i.inc(table=self.TABLE, row_key=word, column_family=str(self.get_bin()), how_much=freq)
                 logging.debug("Up to: {0}".format(total))
             except UnicodeEncodeError, e:
                 logging.warning("Caught UnicodeEncodeError: {0}".format(e))
-                total = self.inc(table=self.TABLE, row_key=word.encode('utf-8'), column_family=str(self.get_bin()), how_much=freq)
+                total = self.i.inc(table=self.TABLE, row_key=word.encode('utf-8'), column_family=str(self.get_bin()), how_much=freq)
                 logging.debug("Up to: {0}".format(total))
 
