@@ -37,10 +37,11 @@ class WordCount(object):
             logging.debug(word)
             try:
                 logger.debug(u"Storing {0} counts of {1}".format(freq, word))
-                total = self.i.inc(table=self.TABLE, row_key=word, column_family=str(self.get_bin()), how_much=freq)
+                logger.debug("Calling inc...")
+                total = self.i.inc(self.TABLE, word, 'bin:{0}'.format(self.get_bin()), how_much=int(freq))
                 logging.debug("Up to: {0}".format(total))
             except UnicodeEncodeError, e:
                 logging.warning("Caught UnicodeEncodeError: {0}".format(e))
-                total = self.i.inc(table=self.TABLE, row_key=word.encode('utf-8'), column_family=str(self.get_bin()), how_much=freq)
+                total = self.i.inc(self.TABLE, word.encode('utf-8'), 'bin:{0}'.format(self.get_bin()), how_much=int(freq))
                 logging.debug("Up to: {0}".format(total))
 

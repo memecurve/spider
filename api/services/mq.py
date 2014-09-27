@@ -81,7 +81,7 @@ class Consumer(object):
 
     def __init__(self, queue=None, callback=None):
         logger.debug("Consumer Connecting...")
-        cfg = pika.ConnectionParameters(host=RABBITMQ_HOST, port=RABBITMQ_PORT, heartbeat_interval=2)
+        cfg = pika.ConnectionParameters(host=RABBITMQ_HOST, port=RABBITMQ_PORT, heartbeat_interval=600)
         self.__conn = pika.SelectConnection(cfg, self.on_connection)
         self.__callback = callback
         self.__queue = queue

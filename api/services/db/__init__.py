@@ -70,7 +70,7 @@ class HbaseInternals(object):
         mutations = []
         for column_key, value in doc.iteritems():
             mutations.append(Hbase.Mutation(column=column_key, value=value))
-        self.__client.mutateRow("_".join([self.__table_prefix, table]), row_key, mutations)
+        self.__client.mutateRow("_".join([self.__table_prefix, table]), row_key, mutations, {})
 
     def find_one(self, table, row_key):
         """
@@ -83,7 +83,7 @@ class HbaseInternals(object):
         :returns: The document at the row
         """
         try:
-            row = self.__client.getRow('_'.join([self.__table_prefix, table]), row_key)
+            row = self.__client.getRow('_'.join([self.__table_prefix, table]), row_key, attributes=None)
             if row:
                 row = row[0]
                 return {col: tcell.value for col, tcell in row.columns.iteritems()}
@@ -111,12 +111,14 @@ class HbaseInternals(object):
                 params = {'tableName': '_'.join([self.__table_prefix, table]),
                           'startRow': row_prefix or row_start,
                           'stopRow': row_stop,
-                          'columns': columns}
+                          'columns': columns,
+                          'attributes': None}
                 scan = self.__client.scannerOpenWithStop(**params)
             else:
                 params = {'tableName': '_'.join([self.__table_prefix, table]),
                           'startAndPrefix': row_prefix or row_start,
-                          'columns': columns}
+                          'columns': columns,
+                          'attributes': None}
                 scan = self.__client.scannerOpenWithPrefix(**params)
 
             logger.debug("Got scan: {0}".format(scan))
@@ -152,7 +154,7 @@ class HbaseInternals(object):
             logger.debug("{0} Closed.".format(scan))
 
     def delete_one(self, table, row_key):
-        return self.__client.deleteAllRow("_".join([self.__table_prefix, table]), row_key)
+        return self.__client.deleteAllRow("_".join([self.__table_prefix, table]), row_key, attributes=None)
 
     def inc(self, table, row_key, column_family, how_much=0):
         return self.__client.atomicIncrement('_'.join([self.__table_prefix, table]), row_key, column_family, how_much)
@@ -191,7 +193,7 @@ class HbaseInternals(object):
                     mutations.append(Hbase.Mutation(column=column_key, value=value))
                 all_mutations.append(Hbase.BatchMutation(row=row_key, mutations=mutations))
 
-            self.__client.mutateRows('_'.join([self.__table_prefix, table]), all_mutations)
+            self.__client.mutateRows('_'.join([self.__table_prefix, table]), all_mutations, attributes=None)
             return True
         except ValueError, e:
             return False
