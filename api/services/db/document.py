@@ -32,7 +32,7 @@ def create(document, created_at=None):
     doc = { u'self:url': document.url,
             u'self:type': document.type,
             u'self:updated_at': unicode(updated_at),
-            u'data:markup': document.markup }
+            u'data:markup': document.markup.encode('utf_16_be')}
     doc.update(hrefs)
 
     row_key = u"{0}{1}{2}".format(document.type,

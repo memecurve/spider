@@ -1,5 +1,7 @@
 import logging
 
+import thrift
+
 from api.services.db import HbaseInternals
 from api.settings import LOG_LEVEL
 
@@ -35,13 +37,11 @@ class WordCount(object):
         for word, freq in word_counts.iteritems():
             logging.debug("Logging count, {0}, for ".format(freq))
             logging.debug(word)
+            logger.debug(u"Storing {0} counts of {1}".format(freq, word))
+            logger.debug("Calling inc...")
             try:
-                logger.debug(u"Storing {0} counts of {1}".format(freq, word))
-                logger.debug("Calling inc...")
-                total = self.i.inc(self.TABLE, word, 'bin:{0}'.format(self.get_bin()), how_much=int(freq))
-                logging.debug("Up to: {0}".format(total))
-            except UnicodeEncodeError, e:
-                logging.warning("Caught UnicodeEncodeError: {0}".format(e))
-                total = self.i.inc(self.TABLE, word.encode('utf-8'), 'bin:{0}'.format(self.get_bin()), how_much=int(freq))
-                logging.debug("Up to: {0}".format(total))
+                total = self.i.inc(self.TABLE, word.encode('utf_16_be'), 'bin:{0}'.format(self.get_bin()), how_much=int(freq))
+            except thrift.Thrift.TApplicationException, e:
+                logger.warning("Couldn't increment for word: {0}".format(e))
+
 

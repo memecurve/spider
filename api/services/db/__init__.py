@@ -70,7 +70,10 @@ class HbaseInternals(object):
         mutations = []
         for column_key, value in doc.iteritems():
             mutations.append(Hbase.Mutation(column=column_key, value=value))
-        self.__client.mutateRow("_".join([self.__table_prefix, table]), row_key, mutations, {})
+        #try:
+        self.__client.mutateRow("_".join([self.__table_prefix, table]), row_key, mutations, None)
+        #except UnicodeEncodeError, e:
+            #logger.warning("Failed to encode unicode character for hbase {0}".format(e))
 
     def find_one(self, table, row_key):
         """
